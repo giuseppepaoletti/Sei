@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:title="@string/impostazioni">
+
+    <ListPreference android:entries="@array/auto_down_elements" android:entryValues="@array/auto_down_elements" android:dialogTitle="@string/auto_download" android:negativeButtonText="@string/annulla" android:key="pref_auto_down" android:title="@string/auto_download" android:summary="@string/auto_down_expl"/><ListPreference
+        android:entries="@array/opzioni_connessione"
+        android:negativeButtonText="@string/annulla"
+        android:entryValues="@array/opzioni_connessione"
+        android:dialogTitle="@string/connessione"
+        android:title="@string/parametri_connessione"
+        android:summary="@string/determina"
+        android:key="pref_connessione">
+    </ListPreference>
+
+    <EditTextPreference
+        android:negativeButtonText="@string/annulla"
+        android:key="pref_directory"
+        android:title="@string/path_data"
+        android:summary="@string/path_desc"
+        android:dialogTitle="@string/path_data">
+    </EditTextPreference>
+
+</PreferenceScreen>

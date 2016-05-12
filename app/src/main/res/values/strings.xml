@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Sei</string>
+    <string name="impostazioni">Impostazioni</string>
+    <string name="colonne">Colonne</string>
+    <string name="aggiorna">Aggiorna</string>
+    <string name="nessuna_connessione">Nessuna connessione disponibile</string>
+    <string name="programma_aggiornato">Il programma è aggiornato all\'ultima versione disponibile</string>
+    <string name="salvataggio_eseguito">Salvataggio eseguito</string>
+    <string name="annulla">Annulla</string>
+    <string name="connessione">Connessione</string>
+    <string name="parametri_connessione">Parametri connessione</string>
+    <string name="determina">Determina come si collega ad Internet</string>
+    <string name="path_data">Directory dati</string>
+    <string name="path_desc">Imposta la cartella di lavoro</string>
+    <string name="auto_download">Controlla automaticamente</string>
+    <string name="auto_down_expl">Controlla automaticamente le estrazioni (ogni giorno)</string>
+    <string name="salva">Salva</string>
+
+    <string-array name="opzioni_connessione">
+        <item>Manuale</item>
+        <item>3G</item>
+        <item>Wi-Fi</item>
+    </string-array>
+
+    <string-array name="auto_down_elements">
+        <item>No</item>
+        <item>Mattino (08:00)</item>
+        <item>Pomeriggio (14:30)</item>
+        <item>Sera (21:00)</item>
+    </string-array>
+</resources>
