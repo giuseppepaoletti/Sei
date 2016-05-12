@@ -5,6 +5,7 @@
     <string name="aggiorna">Aggiorna</string>
     <string name="nessuna_connessione">Nessuna connessione disponibile</string>
     <string name="programma_aggiornato">Il programma è aggiornato all\'ultima versione disponibile</string>
+    <string name="aggiornamento_disponibile">Aggiornamento programma disponibile\nEsegui il comando Menu-Aggiorna</string>
     <string name="salvataggio_eseguito">Salvataggio eseguito</string>
     <string name="annulla">Annulla</string>
     <string name="connessione">Connessione</string>

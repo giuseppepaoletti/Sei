@@ -33,7 +33,7 @@ public class Alarm extends BroadcastReceiver
             Main	mainActivity = global.activity;
             if( mainActivity != null )
             {
-                mainActivity.StartDownloadAsyncTask( Main.DOWNLOAD_MODE_TIMER );
+                mainActivity.StartAsyncTask( Main.DOWNLOAD_MODE_TIMER );
                 /*PowerManager pm = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
                 PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "");
                 wl.acquire();

@@ -34,11 +34,12 @@ public class Main extends AppCompatActivity
 {
     public static final int NOTIFICATION_ID = 1;
     public static final int RETCODE_SETTINGS = 1, RETCODE_COLUMNS = 2;
-    public static final int DOWNLOAD_MODE_INTERACTIVE = 0, DOWNLOAD_MODE_TIMER = 1;
+    public static final int DOWNLOAD_MODE_INTERACTIVE = 0, DOWNLOAD_MODE_TIMER = 1, UPDATE_MODE_INSTALL = 2, UPDATE_MODE_CHECK = 3;
 
     private String	mVersionUrl = "http://giuseppepaoletti.altervista.org/sei/sei.txt";
     private String	mApkUrl = "http://giuseppepaoletti.altervista.org/sei/Sei.apk";
 
+    private Integer mUpdateAvailable;
     private Alarm	mAlarm;
     public 	SeiData	mData;
 
@@ -118,9 +119,20 @@ public class Main extends AppCompatActivity
         android.os.Process.killProcess(pid);
     }
 
-    public void StartDownloadAsyncTask( Integer mode )
+    public void StartAsyncTask( Integer mode )
     {
-        new DownloadAsyncTask().execute( mode );
+        switch( mode )
+        {
+            case DOWNLOAD_MODE_INTERACTIVE:
+            case DOWNLOAD_MODE_TIMER:
+                new DownloadAsyncTask().execute( mode );
+                break;
+
+            case UPDATE_MODE_INSTALL:
+            case UPDATE_MODE_CHECK:
+                 new UpdateAsyncTask().execute( mode );
+                break;
+        }
     }
 
     private class DownloadAsyncTask extends AsyncTask<Integer, Integer, Integer>
@@ -172,21 +184,27 @@ public class Main extends AppCompatActivity
                 else
                     Main.WriteLog( "onReceive mainActivity NULL!" );
             }
-            else
+            else if( mMode == DOWNLOAD_MODE_INTERACTIVE )
             {
                 if( result != 0 )
                     ControllaVisualizzaRisultati();
             }
+
+            // in ogni caso se sono riuscito a scaricare e non ci sono aggiornamenti segnalati, controllo se ce ne sono in rete
+            if( result != 0 && mUpdateAvailable == 0 )
+                StartAsyncTask( UPDATE_MODE_CHECK );
         }
     }
-    private class UpdateAsyncTask extends AsyncTask<Context, Integer, Integer>
+    private class UpdateAsyncTask extends AsyncTask<Integer, Integer, Integer>
     {
+        Integer mMode = 0;
         UpdateChecker mChecker = null;
 
         @Override
-        protected Integer doInBackground(Context... arg0)
+        protected Integer doInBackground(Integer... arg0)
         {
-            mChecker = new UpdateChecker( arg0[0], true );
+            mMode = arg0[0];
+            mChecker = new UpdateChecker( global.activity, true );
             mChecker.checkForUpdateByVersionCode( mVersionUrl );
             if( mChecker.isUpdateAvailable() )
                 return 1;
@@ -197,10 +215,19 @@ public class Main extends AppCompatActivity
         @Override
         protected void onPostExecute(Integer result)
         {
-            if( result == 1 )
-                mChecker.downloadAndInstall(mApkUrl);
-            else
-                Toast.makeText( getApplicationContext(), R.string.programma_aggiornato, Toast.LENGTH_LONG ).show();
+            if( mMode == UPDATE_MODE_INSTALL )
+            {
+                if( result == 1 )
+                    mChecker.downloadAndInstall(mApkUrl);
+                else
+                    Toast.makeText(getApplicationContext(), R.string.programma_aggiornato, Toast.LENGTH_LONG).show();
+                mUpdateAvailable = 0;
+            }
+            else if( mMode == UPDATE_MODE_CHECK )
+            {
+                if( result == 1 )
+                    mUpdateAvailable = 1;
+            }
         }
     }
 
@@ -213,6 +240,7 @@ public class Main extends AppCompatActivity
 
         // inizializzazione dati
         mData = new SeiData();
+        mUpdateAvailable = 0;
 
         WriteLog( "OnCreate" );
 
@@ -225,7 +253,7 @@ public class Main extends AppCompatActivity
             @Override
             public void onClick(View view)
             {
-                StartDownloadAsyncTask( DOWNLOAD_MODE_INTERACTIVE );
+                StartAsyncTask( DOWNLOAD_MODE_INTERACTIVE );
                 //Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG).setAction("Action", null).show();
             }
         });
@@ -260,6 +288,12 @@ public class Main extends AppCompatActivity
     {
         super.onResume();
         WriteLog( "onResume" );
+
+        // avviso se c'è un aggiornamento disponibile
+        if( mUpdateAvailable == 1 )
+            Toast.makeText( this, R.string.aggiornamento_disponibile, Toast.LENGTH_LONG ).show();
+        else if( mUpdateAvailable == -1 )
+            mUpdateAvailable = 1;
     }
 
     @Override
@@ -336,7 +370,7 @@ public class Main extends AppCompatActivity
         else if (id == R.id.menuAggiorna)
         {
             // controllo aggiornamento versione
-            new UpdateAsyncTask().execute( this );
+            StartAsyncTask( UPDATE_MODE_INSTALL );
             return true;
         }
 
@@ -352,12 +386,18 @@ public class Main extends AppCompatActivity
             mData.Serialize( false, true );
             // impostazione timer per aggiornamento automatico
             ImpostaAllarme( true );
+            // per evitare di visualizzare il messaggio al ritorno dal menu
+            if( mUpdateAvailable == 1 )
+                mUpdateAvailable = -1;
         }
         else if( requestCode == RETCODE_COLUMNS )
         {
             WriteLog( "menu Colonne (exit)" );
             if( resultCode == RESULT_OK )
                 Toast.makeText( getBaseContext(), R.string.salvataggio_eseguito, Toast.LENGTH_LONG ).show();
+            // per evitare di visualizzare il messaggio al ritorno dal menu
+            if( mUpdateAvailable == 1 )
+                mUpdateAvailable = -1;
         }
     }
 
