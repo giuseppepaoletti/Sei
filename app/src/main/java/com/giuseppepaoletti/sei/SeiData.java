@@ -463,6 +463,7 @@ reader = new BufferedReader( new InputStreamReader( response.getEntity().getCont
                 // da qui in poi ci sono le vincite, che stanno alla fine della riga successiva
                 if( iv >= 0 )
                 {
+                    Main.WriteLog( "WebPage vincita "+iv+" "+riga );
                     tmp = "";
                     for( i=Math.max(20,line.length()-14) ; i<line.length() ; i++ )
                     {

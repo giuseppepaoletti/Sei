@@ -143,7 +143,7 @@ public class Main extends AppCompatActivity
         protected Integer doInBackground(Integer... arg0)
         {
             mMode = arg0[0];
-            WriteLog( "OnClickListener Scarica mode " + mMode );
+            WriteLog( "DownloadAsyncTask mode " + mMode );
             return mData.ScaricaRisultati( mMode==DOWNLOAD_MODE_TIMER );
         }
 
@@ -160,19 +160,20 @@ public class Main extends AppCompatActivity
                     wl.acquire();
                     if( result == 1 )
                     {
-                        //mainActivity.mData.ControllaRisultati();
-                        Intent intent1 = new Intent(mainActivity, Main.class);
+                        mainActivity.mData.ControllaRisultati();
+                        Intent intent1 = new Intent(getApplicationContext(), Main.class);
+                        intent1.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
                         intent1.putExtra("IntentID", Main.NOTIFICATION_ID);
-                        PendingIntent pendingIntent = PendingIntent.getActivity(mainActivity, 0, intent1, Intent.FILL_IN_ACTION);
-                        Notification notify = new NotificationCompat.Builder(mainActivity)
+                        PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent1, PendingIntent.FLAG_UPDATE_CURRENT);
+                        Notification notify = new NotificationCompat.Builder(Main.this/*mainActivity*/)
                                 .setContentTitle(mainActivity.mData.mConcorso)
                                 .setContentText(mainActivity.mData.mRisultato)
                                 .setSmallIcon(R.mipmap.ic_launcher)
+                                .setAutoCancel(true)
                                 .setDefaults(Notification.FLAG_SHOW_LIGHTS | Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE)
                                 .setContentIntent(pendingIntent)
                                 .setLights(Color.BLUE, 300, 1000)
                                 .build();
-                        notify.flags = Notification.FLAG_AUTO_CANCEL;
                         NotificationManager notificationManager = (NotificationManager) mainActivity.getSystemService(Context.NOTIFICATION_SERVICE);
                         notificationManager.notify(Main.NOTIFICATION_ID, notify);
                     }
