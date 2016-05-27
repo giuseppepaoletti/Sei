@@ -268,6 +268,13 @@ public class Main extends AppCompatActivity
         // impostazione timer per aggiornamento automatico
         mAlarm = new Alarm();
         ImpostaAllarme( true );
+
+        // se avvio applicazione al momento del boot la mando in background
+        if( getIntent().getBooleanExtra( "startOnBoot", false ) )
+        {
+            WriteLog( String.format("onReceive RECEIVE_BOOT_COMPLETED") );
+            onBackPressed();
+        }
     }
 
     @Override
