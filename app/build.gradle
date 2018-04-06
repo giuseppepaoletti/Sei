@@ -6,9 +6,9 @@ android {
     defaultConfig {
         applicationId "com.giuseppepaoletti.sei"
         minSdkVersion 19
-        targetSdkVersion 23
-        versionCode 12
-        versionName '12'
+        targetSdkVersion 22
+        versionCode 13
+        versionName '13'
     }
     buildTypes {
         release {
