@@ -40,7 +40,7 @@ public class SeiData
     public String	mConnType = "Manuale";
     public String	mAutoDown = "No";
 
-    private String	mPageUrl = "http://www.televideo.rai.it/televideo/pub/solotesto.jsp?pagina=598";
+    private String	mPageUrl = "http://www.televideo.rai.it/televideo/pub/solotesto.jsp?pagina=791";
 
     public SeiData()
     {
