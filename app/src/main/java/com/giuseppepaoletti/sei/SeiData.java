@@ -40,7 +40,8 @@ public class SeiData
     public String	mConnType = "Manuale";
     public String	mAutoDown = "No";
 
-    private String	mPageUrl = "http://www.televideo.rai.it/televideo/pub/solotesto.jsp?pagina=791";
+    private String	mPageUrl1 = "http://www.televideo.rai.it/televideo/pub/solotesto.jsp?pagina=791";
+    private String	mPageUrl2 = "http://www.televideo.rai.it/televideo/pub/solotesto.jsp?pagina=791&sottopagina=2";
 
     public SeiData()
     {
@@ -106,6 +107,40 @@ public class SeiData
         }
 
         return ncol;
+    }
+
+    public int EstraiDataConcorso( String concorso )
+    /*
+        Estrae la data concorso in formato numerico (AAMMGG) dalla stringa concorso
+    */
+    {
+        int     i, data = 0;
+        String  conc = concorso, val = null, aa = null, mm = null, gg = null;
+
+        for( i=conc.length()-1 ; i>=0 ; i-- )
+        {
+            if( conc.charAt(i) < '0' || conc.charAt(i) > '9' )
+            {
+                val = conc.substring( i+1, conc.length() );
+                conc = conc.substring( 0, i );
+                i = conc.length();
+                if( aa == null )
+                {
+                    aa = val;
+                    if( aa.length() == 4 )
+                        aa = aa.substring( 2 );
+                }
+                else if( mm == null )
+                    mm = val;
+                else if( gg == null )
+                {
+                    gg = val;
+                    break;
+                }
+            }
+        }
+
+        return Integer.decode(aa+mm+gg);
     }
 
     public void Serialize( Boolean store, Boolean onlyCfg )
@@ -321,10 +356,10 @@ public class SeiData
 	 */
     {
         boolean			inPagina = false, qualcheNum = false, isWiFiEnabled = false;
-        Integer			i, iv = -1, ok = 0, estrazione[] = new Integer[7];
+        Integer			i, np, iv = -1, ok = 0, dataConcorso1 = 0, dataConcorso2 = 0, estrazione[] = new Integer[7];
         Double			premi[] = new Double[6];
         URL 			url = null;
-        String			line = null, riga = null, tmp = null, concorso = null;
+        String			line = null, riga = null, tmp = null, concorso1 = null, concorso2 = null;
         BufferedReader	reader = null;
 
         for( i=0 ; i<estrazione.length ; i++ )
@@ -386,142 +421,166 @@ public class SeiData
             }
         }
 
-        try
+        for( np=0 ; np<2 ; np++ )
         {
-            url = new URL( mPageUrl );
-            URLConnection	conn = url.openConnection();
-            conn.setConnectTimeout( 10000 );
-            conn.setReadTimeout( 10000 );
-            InputStream	is = conn.getInputStream();
-            //InputStream	is = new FileInputStream( Environment.getExternalStorageDirectory()+"/Estrazione.html" );
+            inPagina = false;
+
+            try
+            {
+                url = new URL( np==0 ? mPageUrl1:mPageUrl2 );
+                URLConnection	conn = url.openConnection();
+                conn.setConnectTimeout( 10000 );
+                conn.setReadTimeout( 10000 );
+                InputStream	is = conn.getInputStream();
+                //InputStream	is = new FileInputStream( Environment.getExternalStorageDirectory()+"/Estrazione.html" );
 //InputStream	is = url.openStream();
-            InputStreamReader	isr = new InputStreamReader( is, "UTF-8" );
-            reader = new BufferedReader( isr );
+                InputStreamReader	isr = new InputStreamReader( is, "UTF-8" );
+                reader = new BufferedReader( isr );
 /*HttpGet httpGet = new HttpGet("http://www.televideo.rai.it/televideo/pub/solotesto.jsp?pagina=598");
 HttpClient httpClient = new DefaultHttpClient();
 HttpResponse response = httpClient.execute(httpGet);
 reader = new BufferedReader( new InputStreamReader( response.getEntity().getContent() ) );*/
-            File file = new File(mDataPath, "Pagina.html");
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-            while( (line = reader.readLine()) != null )
-            {
-                riga = line.trim();
-                writer.write(line);
-                writer.write("\r\n");
-
-                // riga dati concorso, che è la prima cosa che incontro
-                if( concorso == null && riga.indexOf( "CONCORSO" ) >= 0 )
+                File file = new File(mDataPath, "Pagina.html");
+                BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+                while( (line = reader.readLine()) != null )
                 {
-                    Main.WriteLog( "WebPage "+riga );
-                    for( i=riga.length()-1 ; i>=0 ; i-- )
-                    {
-                        if( riga.charAt(i) == '/' )
-                        {
-                            concorso = riga.substring( riga.indexOf( "CONCORSO" ), i+5 ).trim();
-                            inPagina = true;
-                            break;
-                        }
-                    }
-                }
+                    riga = line.trim();
+                    writer.write(line);
+                    writer.write("\r\n");
 
-                // se non sono arrivato ancora all'inizio della pagina vado avanti
-                if( inPagina == false )
-                    continue;
-
-                // se contiene la stringa "</pre>" ho terminato
-                if( riga.indexOf( "</pre>") >= 0 )
-                    break;
-
-                // se la riga contiene nelle prime posizioni tutti numeri è la riga dei numeri estratti
-                if( line.length() >= 20 )
-                {
-                    qualcheNum = false;
-                    for( i=0 ; i<20 && estrazione[0]==0 ; i++ )
-                    {
-                        if( line.charAt(i) >= '0' && line.charAt(i) <= '9' )
-                            qualcheNum = true;
-                        else if( line.charAt(i) != ' ' )
-                            break;
-                    }
-                    if( qualcheNum && i == 20 )
+                    // riga dati concorso, che è la prima cosa che incontro
+                    if( ( ( np == 0 && concorso1 == null ) || ( np == 1 && concorso2 == null ) ) && riga.indexOf( "CONCORSO" ) >= 0 )
                     {
                         Main.WriteLog( "WebPage "+riga );
-                        ConvertiStringaInNumeri( line.substring(0,20).trim(), estrazione );
+                        for( i=riga.length()-1 ; i>=0 ; i-- )
+                        {
+                            if( riga.charAt(i) == '/' )
+                            {
+                                if( np == 0 )
+                                    concorso1 = riga.substring( riga.indexOf( "CONCORSO" ), i+5 ).trim();
+                                else
+                                    concorso2 = riga.substring( riga.indexOf( "CONCORSO" ), i+5 ).trim();
+                                inPagina = true;
+                                break;
+                            }
+                        }
+                        if( ( np == 0 && !concorso1.isEmpty() ) || ( np == 1 && !concorso2.isEmpty() ) )
+                        {
+                            if( np == 0 )
+                                dataConcorso1 = EstraiDataConcorso( concorso1 );
+                            else
+                            {
+                                dataConcorso2 = EstraiDataConcorso( concorso2 );
+                                if( dataConcorso1 >= dataConcorso2 )
+                                    break;
+                                // nella sottopagina c'è un'estrazione più recente, leggo i dati da lì
+                                for( i=0 ; i<estrazione.length ; i++ )
+                                    estrazione[i] = 0;
+                                for( i=0 ; i<premi.length ; i++ )
+                                    premi[i] = 0.0;
+                            }
+                        }
                     }
-                }
 
-                // numero jolly
-                if( estrazione[6] == 0 && (i=line.indexOf("Numero Jolly")) >= 0 )
-                {
-                    Main.WriteLog( "WebPage "+riga );
-                    tmp = line.substring( i+12, Math.min(19,line.length()) );
-                    tmp = tmp.trim();
-                    if( tmp.length() > 0 )
-                        estrazione[6] = Integer.decode( tmp );
-                }
+                    // se non sono arrivato ancora all'inizio della pagina vado avanti
+                    if( inPagina == false )
+                        continue;
 
-                // da qui in poi ci sono le vincite, che stanno alla fine della riga successiva
-                if( iv >= 0 )
-                {
-                    Main.WriteLog( "WebPage vincita "+iv+" "+riga );
-                    tmp = "";
-                    for( i=Math.max(20,line.length()-14) ; i<line.length() ; i++ )
+                    // se contiene la stringa "</pre>" ho terminato
+                    if( riga.indexOf( "</pre>") >= 0 )
+                        break;
+
+                    // se la riga contiene nelle prime posizioni tutti numeri è la riga dei numeri estratti
+                    if( line.length() >= 20 )
                     {
-                        if( ( line.charAt(i) >= '0' && line.charAt(i) <= '9' ) )
-                            tmp += line.charAt(i);
-                        else if( line.charAt(i) == ',' )
-                            tmp += '.';
+                        qualcheNum = false;
+                        for( i=0 ; i<20 && estrazione[0]==0 ; i++ )
+                        {
+                            if( line.charAt(i) >= '0' && line.charAt(i) <= '9' )
+                                qualcheNum = true;
+                            else if( line.charAt(i) != ' ' )
+                                break;
+                        }
+                        if( qualcheNum && i == 20 )
+                        {
+                            Main.WriteLog( "WebPage "+riga );
+                            ConvertiStringaInNumeri( line.substring(0,20).trim(), estrazione );
+                        }
                     }
-                    if( tmp.length() > 0 )
-                        premi[iv] = Double.parseDouble( tmp );
-                    iv = -1;
+
+                    // numero jolly
+                    if( estrazione[6] == 0 && (i=line.indexOf("Numero Jolly")) >= 0 )
+                    {
+                        Main.WriteLog( "WebPage "+riga );
+                        tmp = line.substring( i+12, Math.min(19,line.length()) );
+                        tmp = tmp.trim();
+                        if( tmp.length() > 0 )
+                            estrazione[6] = Integer.decode( tmp );
+                    }
+
+                    // da qui in poi ci sono le vincite, che stanno alla fine della riga successiva
+                    if( iv >= 0 )
+                    {
+                        Main.WriteLog( "WebPage vincita "+iv+" "+riga );
+                        tmp = "";
+                        for( i=Math.max(20,line.length()-14) ; i<line.length() ; i++ )
+                        {
+                            if( ( line.charAt(i) >= '0' && line.charAt(i) <= '9' ) )
+                                tmp += line.charAt(i);
+                            else if( line.charAt(i) == ',' )
+                                tmp += '.';
+                        }
+                        if( tmp.length() > 0 )
+                            premi[iv] = Double.parseDouble( tmp );
+                        iv = -1;
+                    }
+                    else
+                    {
+                        iv = -1;
+                        if( premi[5] == 0 && riga.indexOf( "\"sei\"" ) >= 0 )
+                            iv = 5;
+                        else if( premi[4] == 0 && riga.indexOf( "\"cinque+1\"" ) >= 0 )
+                            iv = 4;
+                        else if( premi[3] == 0 && riga.indexOf( "\"cinque\"" ) >= 0 )
+                            iv = 3;
+                        else if( premi[2] == 0 && riga.indexOf( "\"quattro\"" ) >= 0 )
+                            iv = 2;
+                        else if( premi[1] == 0 && riga.indexOf( "\"tre\"" ) >= 0 )
+                            iv = 1;
+                        else if( premi[0] == 0 && riga.indexOf( "\"due\"" ) >= 0 )
+                            iv = 0;
+                    }
                 }
-                else
-                {
-                    iv = -1;
-                    if( premi[5] == 0 && riga.indexOf( "\"sei\"" ) >= 0 )
-                        iv = 5;
-                    else if( premi[4] == 0 && riga.indexOf( "\"cinque+1\"" ) >= 0 )
-                        iv = 4;
-                    else if( premi[3] == 0 && riga.indexOf( "\"cinque\"" ) >= 0 )
-                        iv = 3;
-                    else if( premi[2] == 0 && riga.indexOf( "\"quattro\"" ) >= 0 )
-                        iv = 2;
-                    else if( premi[1] == 0 && riga.indexOf( "\"tre\"" ) >= 0 )
-                        iv = 1;
-                    else if( premi[0] == 0 && riga.indexOf( "\"due\"" ) >= 0 )
-                        iv = 0;
-                }
+                writer.close();
             }
-            writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            Main.WriteLog( "WebPage UnsupportedEncodingException: "+e.getMessage() );
-            Toast.makeText( global.activity.getBaseContext(), e.getMessage(), Toast.LENGTH_LONG ).show();
-            e.printStackTrace();
-        }
-        catch (IOException e)
-        {
-            Main.WriteLog( "WebPage IOException: "+e.getMessage() );
-            Toast.makeText( global.activity.getBaseContext(), e.getMessage(), Toast.LENGTH_LONG ).show();
-            e.printStackTrace();
-        }
-        catch (Exception e)
-        {
-            Main.WriteLog( "Exception: "+e.getMessage() );
-            Toast.makeText( global.activity.getBaseContext(), e.getMessage(), Toast.LENGTH_LONG ).show();
-            e.printStackTrace();
-        }
-        finally
-        {
-            if( reader != null )
+            catch (UnsupportedEncodingException e)
             {
-                try
+                Main.WriteLog( "WebPage UnsupportedEncodingException: "+e.getMessage() );
+                Toast.makeText( global.activity.getBaseContext(), e.getMessage(), Toast.LENGTH_LONG ).show();
+                e.printStackTrace();
+            }
+            catch (IOException e)
+            {
+                Main.WriteLog( "WebPage IOException: "+e.getMessage() );
+                Toast.makeText( global.activity.getBaseContext(), e.getMessage(), Toast.LENGTH_LONG ).show();
+                e.printStackTrace();
+            }
+            catch (Exception e)
+            {
+                Main.WriteLog( "Exception: "+e.getMessage() );
+                Toast.makeText( global.activity.getBaseContext(), e.getMessage(), Toast.LENGTH_LONG ).show();
+                e.printStackTrace();
+            }
+            finally
+            {
+                if( reader != null )
                 {
-                    reader.close();
+                    try
+                    {
+                        reader.close();
+                    }
+                    catch (IOException logOrIgnore) {}
                 }
-                catch (IOException logOrIgnore) {}
             }
         }
 
@@ -553,7 +612,7 @@ reader = new BufferedReader( new InputStreamReader( response.getEntity().getCont
                 mEstrazione[i] = estrazione[i];
             for( i=0 ; i<premi.length ; i++ )
                 mPremi[i] = premi[i];
-            mConcorso = concorso;
+            mConcorso = np == 2 ? concorso2 : concorso1;
 
             Serialize( true, false );
         }
